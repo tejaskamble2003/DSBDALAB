@@ -1,0 +1,73 @@
+-- Creating Database
+CREATE DATABASE IF NOT EXISTS flight_information_system;
+
+-- Using the Database
+USE flight_information_system;
+
+-- Creating Flight Information Table
+CREATE TABLE IF NOT EXISTS flight_info (
+    flight_id INT,
+    flight_date STRING,
+    departure_time STRING,
+    departure_delay INT,
+    origin STRING,
+    destination STRING
+);
+
+-- Dropping Table (if needed)
+-- DROP TABLE IF EXISTS flight_info;
+
+-- Altering Table (adding a new field)
+ALTER TABLE flight_info ADD COLUMN airline STRING;
+
+-- Creating External Table for additional flight information
+CREATE EXTERNAL TABLE IF NOT EXISTS additional_flight_info (
+    flight_id INT,
+    aircraft_type STRING,
+    seat_capacity INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LOCATION '/user/hive/additional_flight_info';
+
+-- Loading data into Flight Information Table
+LOAD DATA INPATH '/user/hive/flight_info' INTO TABLE flight_info;
+
+-- Inserting new values into Flight Information Table
+INSERT INTO TABLE flight_info
+VALUES (1001, '2024-05-07', '14:30', 10, 'JFK', 'LAX', 'Delta');
+
+-- Joining Flight Information Table with Additional Flight Information Table
+SELECT fi.*, afi.aircraft_type, afi.seat_capacity
+FROM flight_info fi
+JOIN additional_flight_info afi
+ON fi.flight_id = afi.flight_id;
+
+-- Creating Index on Flight Information Table
+CREATE INDEX IF NOT EXISTS departure_delay_index ON TABLE flight_info (departure_delay);
+
+-- Finding average departure delay per day in 2008
+SELECT flight_date, AVG(departure_delay) AS avg_departure_delay
+FROM flight_info
+WHERE flight_date LIKE '2008-%'
+GROUP BY flight_date;
+
+
+flight_info.csv:
+
+flight_id,flight_date,departure_time,departure_delay,origin,destination,airline
+1,2024-05-07,08:00,5,JFK,LAX,Delta
+2,2024-05-07,09:30,10,LAX,JFK,American
+3,2024-05-08,12:00,0,SFO,SEA,United
+4,2024-05-08,15:45,20,SEA,SFO,Southwest
+5,2024-05-09,11:15,8,LAX,SFO,Delta
+
+
+additional_flight_info.csv:
+
+flight_id,aircraft_type,seat_capacity
+1,Boeing 737,150
+2,Airbus A320,180
+3,Boeing 777,300
+4,Embraer E175,80
+5,Boeing 737,150
